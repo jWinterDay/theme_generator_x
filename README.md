@@ -1,1 +1,1 @@
-dart bin/theme_generator_x_cli.dart colors --input tmp/test_schema.json --output tmp/output.dart --class_name AppThemeDataColorsX
+dart bin/theme_generator_x_cli.dart colors --input tmp/test_schema.json --output tmp/output.dart --class_name AppThemeDataColorsX --use_dark

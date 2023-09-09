@@ -23,6 +23,10 @@ class ColorsCommand extends Command<void> {
         abbr: 'c',
         help: 'output class name',
       )
+      ..addFlag(
+        'use_dark',
+        abbr: 'd',
+      )
       ..addOption(
         'keys_rename',
         abbr: 'r',
@@ -77,6 +81,9 @@ class ColorsCommand extends Command<void> {
       outputFile.createSync();
     }
 
+    // use dark
+    final bool useDark = argResults?['use_dark'] as bool;
+
     // class name
     if (argResults?['class_name'] == null) {
       throw UsageException('Color extension class name must be not null', 'Enter extension class name');
@@ -114,7 +121,12 @@ class ColorsCommand extends Command<void> {
     //
     final ColorsUtils colorUtils = ColorsUtils();
 
-    final String result = colorUtils.generateX(inputFile: inputFile, className: className, keysRename: keysRename);
+    final String result = colorUtils.generateX(
+      inputFile: inputFile,
+      className: className,
+      useDark: useDark,
+      keysRename: keysRename,
+    );
 
     outputFile.writeAsStringSync(result);
   }

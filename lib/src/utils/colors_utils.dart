@@ -96,7 +96,12 @@ class ColorsUtils {
   ///     }
   /// }
   /// ```
-  String generateX({required File inputFile, required String className, required String keysRename}) {
+  String generateX({
+    required File inputFile,
+    required String className,
+    required bool useDark,
+    required String keysRename,
+  }) {
     final StringBuffer sb = StringBuffer();
 
     sb.writeln('''
@@ -140,7 +145,9 @@ class ColorsUtils {
           extLerpReturn.writeln('$keyResultName: Color.lerp($keyResultName, other.$keyResultName, t),');
           // data
           dataLightValues.writeln('$keyResultName: $lightColorResult,');
-          dataDarkValues.writeln('$keyResultName: $lightColorResult,'); //
+          if (useDark) {
+            dataDarkValues.writeln('$keyResultName: $lightColorResult,');
+          }
 
         /// `2. map {"light": "#f6f4da"} or {"light": "#f6f4da", "dark": "#000011"}`
         case {_lightName: final String lVal}:
@@ -154,7 +161,9 @@ class ColorsUtils {
           extLerpReturn.writeln('$keyResultName: Color.lerp($keyResultName, other.$keyResultName, t),');
           // data
           dataLightValues.writeln('$keyResultName: $lightColorResult,');
-          dataDarkValues.writeln('$keyResultName: $darkColorResult,'); //
+          if (useDark) {
+            dataDarkValues.writeln('$keyResultName: $darkColorResult,'); //
+          }
 
         /// `3. map of array colors {"light": ["#656213", "#000011"], "dark": ["#656213", "#000011"]}. Dark is optional`
         case {_lightName: final dynamic lVal}:
@@ -170,18 +179,21 @@ class ColorsUtils {
           ''';
 
           // dark
-          final dynamic dValRaw = value[_darkName];
           List<String>? darkList;
-          if (dValRaw is List<dynamic>) {
-            darkList = dValRaw.map((dynamic element) => replaceColorVal(element?.toString())).toList();
-          }
-          final String resultDarkStr = darkList == null
-              ? resultLigthStr
-              : '''
+          String? resultDarkStr;
+          if (useDark) {
+            final dynamic dValRaw = value[_darkName];
+            if (dValRaw is List<dynamic>) {
+              darkList = dValRaw.map((dynamic element) => replaceColorVal(element?.toString())).toList();
+            }
+            resultDarkStr = darkList == null
+                ? resultLigthStr
+                : '''
                 <Color>[
                   ${darkList.join(',')},
                 ]
               ''';
+          }
 
           // class
           extFields.writeln('final List<Color>? $keyResultName;');
@@ -189,7 +201,9 @@ class ColorsUtils {
           extLerpReturn.writeln('$keyResultName: $keyResultName,');
           // data
           dataLightValues.writeln('$keyResultName: $resultLigthStr,');
-          dataDarkValues.writeln('$keyResultName: $resultDarkStr,'); //
+          if (useDark) {
+            dataDarkValues.writeln('$keyResultName: $resultDarkStr,'); //
+          }
 
         default:
           throw Exception('Unknown color format $keyResultName: $entry');
@@ -210,15 +224,18 @@ class ColorsUtils {
         .replaceAll(RegExp('#DataMethodName#'), '$_lightName${className}Data') // ligthAppThemeDataColorsXData
         .replaceAll(RegExp('#Values'), dataLightValues.toString());
 
-    final String resultDarkDataTemplate = _kExtensionDataTemplate
-        .replaceAll(RegExp('#ClassName#'), className) // AppThemeDataColorsX
-        .replaceAll(RegExp('#DataMethodName#'), '$_darkName${className}Data') // darkAppThemeDataColorsXData
-        .replaceAll(RegExp('#Values'), dataDarkValues.toString());
+    String? resultDarkDataTemplate;
+    if (useDark) {
+      resultDarkDataTemplate = _kExtensionDataTemplate
+          .replaceAll(RegExp('#ClassName#'), className) // AppThemeDataColorsX
+          .replaceAll(RegExp('#DataMethodName#'), '$_darkName${className}Data') // darkAppThemeDataColorsXData
+          .replaceAll(RegExp('#Values'), dataDarkValues.toString());
+    }
 
     sb
       ..writeln(resultLightDataTemplate)
       ..writeln('\n')
-      ..writeln(resultDarkDataTemplate)
+      ..writeln(resultDarkDataTemplate ?? '')
       ..writeln('\n\n')
       ..writeln(resultClassTemplate);
 
