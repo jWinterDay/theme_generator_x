@@ -1,0 +1,43 @@
+name: theme_generator_x
+
+command:
+  bootstrap:
+    # usePubspecOverrides: false
+    runPubGetInParallel: false
+
+  # clean:
+  #   hooks:
+  #     post: melos exec --flutter --concurrency=3 -- "flutter clean"
+
+ignore:
+  - "example"
+
+packages:
+  - "*"
+  - "packages/**"
+
+scripts:
+  analyze:all:
+    description: Analyzes all flutter package files.
+    run: dart analyze .
+
+  format:all:
+    description: Format all flutter package files.
+    run: dart format -l 120 --set-exit-if-changed .
+  format_soft:all:
+    description: Format all flutter package files.
+    run: dart format -l 120 .
+
+  unit_test:all:
+    run: flutter test
+    description: Run `flutter test` for every package
+    packageFilters:
+      dirExists: test
+
+  tests_coverage:
+    run: |
+      brew install lcov
+      flutter test --coverage
+      genhtml coverage/lcov.info -o coverage/html
+      open coverage/html/index.html
+    description: install and run test coverage
