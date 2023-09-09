@@ -1,6 +1,27 @@
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:recase/recase.dart';
 
+const JsonDecoder _kDecoder = JsonDecoder();
+
 class ColorsUtils {
+  String generateX({required File outputFile, required String className, required String keysRename}) {
+    final StringBuffer sb = StringBuffer();
+
+    // TODO
+    sb.writeln('''
+        // GENERATED CODE - DO NOT MODIFY BY HAND
+
+        // ignore_for_file: avoid_classes_with_only_static_members
+
+        // import 'package:uikit/uikit.dart';
+        // import 'package:flutter/material.dart';
+
+        ''');
+
+    return sb.toString();
+  }
   // static const String commonColorThemeXClassName = 'AppThemeDataColorsV2X';
 
   // static const String commonColorClassName = 'AppColorsV2';

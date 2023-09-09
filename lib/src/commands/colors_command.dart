@@ -4,16 +4,16 @@ import 'dart:io';
 import 'package:args/command_runner.dart';
 import 'package:http/http.dart' as http;
 import 'package:path/path.dart' as p;
+import 'package:recase/recase.dart';
 import 'package:theme_generator_x/theme_generator_x.dart';
 
 const JsonDecoder _kDecoder = JsonDecoder();
-final ColorsUtils colorUtils = ColorsUtils();
 
 class ColorsCommand extends Command<void> {
   ColorsCommand() {
     argParser
       ..addOption(
-        'colors_path',
+        'input',
         abbr: 'p',
         help: 'colors path',
       )
@@ -26,6 +26,16 @@ class ColorsCommand extends Command<void> {
         'class_name',
         abbr: 'c',
         help: 'output class name',
+      )
+      ..addOption(
+        'keys_rename',
+        abbr: 'r',
+        allowed: <String>[
+          'camel_case', // camelCase
+          'original',
+          'snake_case', // snake_case
+        ],
+        defaultsTo: 'camel_case',
       );
   }
 
@@ -44,20 +54,27 @@ class ColorsCommand extends Command<void> {
   Future<void> run() async {
     Utils.printGreen('$name generator');
 
-    // color url
-    if (argResults?['colors_path'] == null) {
-      throw UsageException('Color path must be not null', 'Enter color file path');
+    // input path
+    if (argResults?['input'] == null) {
+      throw UsageException('Input file path must be not null', 'Enter color file path');
     }
-    final String colorPath = argResults?['colors_path'] as String;
+    final String inputPath = argResults?['input'] as String;
+    final String absInputPath = p.join(Directory.current.path, inputPath);
+    Utils.printCyan('file input path: $absInputPath');
+    final File inputFile = File(absInputPath);
+    final bool inputExists = inputFile.existsSync();
+    if (!inputExists) {
+      throw UsageException('Input file does not exist', 'Ensure input file exists');
+    }
 
     // output path
     if (argResults?['output'] == null) {
-      throw UsageException('Output file path doesn"t exist', 'Use correct output file path');
+      throw UsageException('Output file path does not exist', 'Use correct output file path');
     }
     final String outputPath = argResults?['output'] as String;
 
     final String absOutputPath = p.join(Directory.current.path, outputPath);
-    Utils.printCyan('file path: $absOutputPath');
+    Utils.printCyan('file output path: $absOutputPath');
     final File outputFile = File(absOutputPath);
     final bool outputExists = outputFile.existsSync();
     if (!outputExists) {
@@ -69,6 +86,8 @@ class ColorsCommand extends Command<void> {
       throw UsageException('Color extension class name must be not null', 'Enter extension class name');
     }
     final String className = argResults?['class_name'] as String;
+
+    final String keysRename = argResults?['keys_rename'] as String;
 
     // download files
     // final http.Response colorContent = await http.get(Uri.parse(colorPath));
@@ -90,62 +109,17 @@ class ColorsCommand extends Command<void> {
     // }
 
     // generate
+    // final StringBuffer sb = StringBuffer();
+    // sb.writeln('// keysRename = $keysRename');
+    // sb.writeln('// className = $className');
+    // sb.writeln('// outputPath = $outputPath');
+    // sb.writeln('// absOutputPath = $absOutputPath');
 
-    final StringBuffer sb = StringBuffer('fsdfsdfsd'); // TODO
+    //
+    final ColorsUtils colorUtils = ColorsUtils();
 
-    // sb.writeln('''
-    //     // GENERATED CODE - DO NOT MODIFY BY HAND
+    final String result = colorUtils.generateX(outputFile: outputFile, className: className, keysRename: keysRename);
 
-    //     // ignore_for_file: avoid_classes_with_only_static_members
-
-    //     import 'package:uikit/uikit.dart';
-    //     import 'package:flutter/material.dart';
-
-    //     ''');
-
-    // final String lightColor = _colorGenerator(colorContent.body, className: ColorUtils.lightColorClassName);
-    // final String darkColor = _colorGenerator(
-    //   colorContent.body,
-    //   className: ColorUtils.darkColorClassName,
-    //   useCustomDark: true,
-    // ); // stub
-
-    // // results
-    // // final String resultBaseColor = colorUtils.resultBaseColorClass(_fieldNameMap);
-    // // final String resultColor = colorUtils.resultColorClass(_fieldNameMap);
-    // final String resultExtensionClass = colorUtils.resultColorExtensionClass(_fieldNameMap);
-    // final String resultExtensionDataClass = colorUtils.resultColorExtensionDataClass(_fieldNameMap);
-
-    // sb
-    //   // ..writeln(resultBaseColor)
-    //   ..writeln(lightColor)
-    //   ..writeln(darkColor)
-    //   ..writeln(resultExtensionClass)
-    //   ..writeln(resultExtensionDataClass);
-
-    outputFile.writeAsStringSync(sb.toString());
+    outputFile.writeAsStringSync(result);
   }
-
-  // String _colorGenerator(String content, {required String className, bool useCustomDark = false}) {
-  //   final StringBuffer sb = StringBuffer();
-
-  //   sb.writeln('''
-  //     class $className {
-  //   ''');
-
-  //   final Map<String, dynamic> tokenMap = _kDecoder.convert(content) as Map<String, dynamic>;
-
-  //   // key: "🄲 Brand[S100]"
-  //   tokenMap.forEach((String key, dynamic value) {
-  //     final PayloadResult payload = colorUtils.handleColor(key, value, useCustomDark: useCustomDark);
-
-  //     _fieldNameMap.addAll(payload.fieldNameMap);
-
-  //     sb.writeln(payload.content);
-  //   });
-
-  //   sb.writeln('}'); // close class
-
-  //   return sb.toString();
-  // }
 }
