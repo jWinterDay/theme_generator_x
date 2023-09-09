@@ -1,7 +1,5 @@
 library theme_generator_x;
 
-/// A Calculator.
-class Calculator {
-  /// Returns [value] plus 1.
-  int addOne(int value) => value + 1;
-}
+export 'src/commands/colors_command.dart';
+export 'src/utils/colors_utils.dart';
+export 'src/utils/utils.dart';
