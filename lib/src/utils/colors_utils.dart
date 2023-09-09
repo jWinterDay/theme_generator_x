@@ -44,6 +44,9 @@ const String _kExtensionDataTemplate = '''
 ''';
 
 class ColorsUtils {
+  static const String _darkName = 'dark';
+  static const String _lightName = 'light';
+
   /// #495aa6 => 0xff495aa6
   String replaceColorVal(String? color) {
     if (color == null) {
@@ -140,8 +143,8 @@ class ColorsUtils {
           dataDarkValues.writeln('$keyResultName: $lightColorResult,'); //
 
         /// `2. map {"light": "#f6f4da"} or {"light": "#f6f4da", "dark": "#000011"}`
-        case {'light': final String lVal}:
-          final String? dVal = value['dark'];
+        case {_lightName: final String lVal}:
+          final String? dVal = value[_darkName];
           final String lightColorResult = replaceColorVal(lVal);
           final String darkColorResult = dVal == null ? lightColorResult : replaceColorVal(dVal);
 
@@ -154,7 +157,7 @@ class ColorsUtils {
           dataDarkValues.writeln('$keyResultName: $darkColorResult,'); //
 
         /// `3. map of array colors {"light": ["#656213", "#000011"], "dark": ["#656213", "#000011"]}. Dark is optional`
-        case {'light': final dynamic lVal}:
+        case {_lightName: final dynamic lVal}:
           // light
           List<String> lightList = <String>[];
           if (lVal is List<dynamic>) {
@@ -162,12 +165,12 @@ class ColorsUtils {
           }
           final String resultLigthStr = '''
             <Color>[
-              ${lightList.join(',')}
+              ${lightList.join(',')},
             ]
           ''';
 
           // dark
-          final dynamic dValRaw = value['dark'];
+          final dynamic dValRaw = value[_darkName];
           List<String>? darkList;
           if (dValRaw is List<dynamic>) {
             darkList = dValRaw.map((dynamic element) => replaceColorVal(element?.toString())).toList();
@@ -176,7 +179,7 @@ class ColorsUtils {
               ? resultLigthStr
               : '''
                 <Color>[
-                  ${darkList.join(',')}
+                  ${darkList.join(',')},
                 ]
               ''';
 
@@ -204,12 +207,12 @@ class ColorsUtils {
 
     final String resultLightDataTemplate = _kExtensionDataTemplate
         .replaceAll(RegExp('#ClassName#'), className) // AppThemeDataColorsX
-        .replaceAll(RegExp('#DataMethodName#'), 'light${className}Data') // ligthAppThemeDataColorsXData
+        .replaceAll(RegExp('#DataMethodName#'), '$_lightName${className}Data') // ligthAppThemeDataColorsXData
         .replaceAll(RegExp('#Values'), dataLightValues.toString());
 
     final String resultDarkDataTemplate = _kExtensionDataTemplate
         .replaceAll(RegExp('#ClassName#'), className) // AppThemeDataColorsX
-        .replaceAll(RegExp('#DataMethodName#'), 'dark${className}Data') // darkAppThemeDataColorsXData
+        .replaceAll(RegExp('#DataMethodName#'), '$_darkName${className}Data') // darkAppThemeDataColorsXData
         .replaceAll(RegExp('#Values'), dataDarkValues.toString());
 
     sb
