@@ -5,21 +5,75 @@ import 'package:theme_generator_x/theme_generator_x.dart';
 const JsonDecoder _kDecoder = JsonDecoder();
 
 class ColorsUtils {
+  /// #495aa6 => 0xff495aa6
+  String replaceColorVal(String color) {
+    // #495aa6 len = 7
+    // #ff495aa6 len = 9
+    if (!<int>[7, 9].contains(color.length)) {
+      throw Exception('color [$color] does not have required format: #495aa6 or #ff495aa6');
+    }
+
+    if (!color.startsWith('#')) {
+      throw Exception('color [$color] does not start with #');
+      // return '0xffffffff';
+    }
+
+    // #495aa6
+    if (color.length == 7) {
+      return color.replaceAll(RegExp('#'), '0xff');
+    }
+
+    // #ff495aa6
+    return color.replaceAll(RegExp('#'), '0x');
+  }
+
+  /// ```json
+  /// {
+  ///     "primary": "#f6f4da",
+  ///     "secondary": "#656213",
+  ///     "some_color": "#000011",
+  ///     "test_color": {
+  ///         "dark": "#656213",
+  ///         "light": "#000011"
+  ///     },
+  ///     "storyLinearGradientBackground": {
+  ///         "dark": [
+  ///             "#656213",
+  ///             "#000011"
+  ///         ],
+  ///         "light": [
+  ///             "#656213",
+  ///             "#000011"
+  ///         ]
+  ///     }
+  /// }
+  /// ```
   String generateX({required File inputFile, required String className, required String keysRename}) {
     final StringBuffer sb = StringBuffer();
 
     sb.writeln('''
       // GENERATED CODE - DO NOT MODIFY BY HAND
+
+      import 'package:flutter/material.dart';
     ''');
 
     final String content = inputFile.readAsStringSync();
 
     final Map<String, dynamic> tokenMap = _kDecoder.convert(content) as Map<String, dynamic>;
 
-    //
-    // Utils.
+    for (final MapEntry<String, dynamic> entry in tokenMap.entries) {
+      final String key = Utils.rename(entry.key, to: keysRename);
+      final dynamic value = entry.value;
 
-    sb.writeln(tokenMap.toString());
+      if (value is! String) {
+        throw Exception('$key does not have required format. Need #495aa6 or #ff495aa6');
+      }
+
+      final String hexValue = replaceColorVal(value);
+      final String colorResult = 'Color($hexValue)';
+
+      sb.writeln('$colorResult');
+    }
 
     return sb.toString();
   }

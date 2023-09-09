@@ -1,5 +1,19 @@
 {
     "primary": "#f6f4da",
     "secondary": "#656213",
-    "some_color": "#000011"
+    "some_color": "#000011",
+    "test_color": {
+        "dark": "#656213",
+        "light": "#000011"
+    },
+    "storyLinearGradientBackground": {
+        "dark": [
+            "#656213",
+            "#000011"
+        ],
+        "light": [
+            "#656213",
+            "#000011"
+        ]
+    }
 }
