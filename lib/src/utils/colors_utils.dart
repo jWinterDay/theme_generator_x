@@ -6,25 +6,31 @@ const JsonDecoder _kDecoder = JsonDecoder();
 
 class ColorsUtils {
   /// #495aa6 => 0xff495aa6
-  String replaceColorVal(String color) {
+  String replaceColorVal(String? color) {
+    if (color == null) {
+      throw Exception('color is null');
+    }
+
     // #495aa6 len = 7
     // #ff495aa6 len = 9
     if (!<int>[7, 9].contains(color.length)) {
-      throw Exception('color [$color] does not have required format: #495aa6 or #ff495aa6');
+      throw Exception('Color [$color] does not have required format: #495aa6 or #ff495aa6');
     }
 
     if (!color.startsWith('#')) {
-      throw Exception('color [$color] does not start with #');
+      throw Exception('Color [$color] does not start with #');
       // return '0xffffffff';
     }
 
     // #495aa6
     if (color.length == 7) {
-      return color.replaceAll(RegExp('#'), '0xff');
+      final String val = color.replaceAll(RegExp('#'), '0xff');
+      return 'Color($val)';
     }
 
     // #ff495aa6
-    return color.replaceAll(RegExp('#'), '0x');
+    final String val = color.replaceAll(RegExp('#'), '0x');
+    return 'Color($val)';
   }
 
   /// ```json
@@ -65,14 +71,66 @@ class ColorsUtils {
       final String key = Utils.rename(entry.key, to: keysRename);
       final dynamic value = entry.value;
 
-      if (value is! String) {
-        throw Exception('$key does not have required format. Need #495aa6 or #ff495aa6');
+      /// `1. simple string "#f6f4da"`
+      if (value is String) {
+        final String lightColorResult = replaceColorVal(value);
+
+        break;
       }
 
-      final String hexValue = replaceColorVal(value);
-      final String colorResult = 'Color($hexValue)';
+      /// `2. map {"light": "#f6f4da"} or {"light": "#f6f4da", "dark": "#000011"}. Dark is optional`
+      if (value is Map<String, dynamic>) {
+        final dynamic rawLightValue = value['light'];
+        final dynamic rawDarkValue = value['dark'];
 
-      sb.writeln('$colorResult');
+        if (rawLightValue == null) {
+          throw Exception('List light color is null. $key: $value');
+        }
+
+        if (rawLightValue is String) {
+          final String lightColorResult = replaceColorVal(rawLightValue);
+        }
+
+        if (rawDarkValue is String) {
+          final String darkColorResult = replaceColorVal(rawDarkValue);
+        }
+
+        break;
+      }
+
+      /// `3. map of array colors {"light": ["#656213", "#000011"], "dark": ["#656213", "#000011"]}. Dark is optional`
+      if (value is Map<String, dynamic>) {
+        final dynamic rawLightValueList = value['light'];
+        final dynamic rawDarkValueList = value['dark'];
+
+        if (rawLightValueList == null) {
+          throw Exception('List light map color is null. $key: $value');
+        }
+
+        if (rawLightValueList is List<dynamic>) {
+          final List<String> resultLightColorList = rawLightValueList.map((dynamic element) {
+            if (element is String) {
+              final String colorResult = replaceColorVal(element);
+            }
+
+            throw Exception('Unknown list format. $key: $value');
+          }).toList();
+        }
+
+        if (rawDarkValueList is List<dynamic>) {
+          final List<String> resultDarkColorList = rawDarkValueList.map((dynamic element) {
+            if (element is String) {
+              final String colorResult = replaceColorVal(element);
+            }
+
+            throw Exception('Unknown list format. $key: $value');
+          }).toList();
+        }
+
+        break;
+      }
+
+      throw Exception('Unknown color format $key: $value');
     }
 
     return sb.toString();
