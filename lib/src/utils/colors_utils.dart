@@ -110,93 +110,66 @@ class ColorsUtils {
       final String keyResultName = Utils.rename(entry.key, to: keysRename);
       final dynamic value = entry.value;
 
-      // ++++
+      //
       extParams.writeln('required this.$keyResultName,');
       extCopyWithReturn.writeln('$keyResultName: $keyResultName ?? this.$keyResultName,');
-      // ++++
 
-      /// `1. simple string "#f6f4da"`
-      if (value is String) {
-        final String lightColorResult = replaceColorVal(value);
+      switch (value) {
+        /// `1. simple string "#f6f4da"`
+        case final String lVal:
+          final String lightColorResult = replaceColorVal(lVal);
+          // print('------ 1 $keyResultName lightColorResult = $lightColorResult');
 
-        extFields.writeln('final Color? $keyResultName;');
-        extCopyWithArguments.writeln('Color? $keyResultName,');
-        extLerpReturn.writeln('$keyResultName: Color.lerp($keyResultName, other.$keyResultName, t),');
+          extFields.writeln('final Color? $keyResultName;');
+          extCopyWithArguments.writeln('Color? $keyResultName,');
+          extLerpReturn.writeln('$keyResultName: Color.lerp($keyResultName, other.$keyResultName, t),');
 
-        break;
+        /// `2. map {"light": "#f6f4da"} or {"light": "#f6f4da", "dark": "#000011"}`
+        case {'light': final String lVal}:
+          extFields.writeln('final Color? $keyResultName;');
+          extCopyWithArguments.writeln('Color? $keyResultName,');
+          extLerpReturn.writeln('$keyResultName: Color.lerp($keyResultName, other.$keyResultName, t),');
+
+          final String? dVal = value['dark'];
+          final String lightColorResult = replaceColorVal(lVal);
+          final String? darkColorResult = dVal == null ? null : replaceColorVal(dVal);
+
+        // print('------ 2 $keyResultName lightColorResult = $lightColorResult darkColorResult = $darkColorResult');
+
+        /// `3. map of array colors {"light": ["#656213", "#000011"], "dark": ["#656213", "#000011"]}. Dark is optional`
+        case {'light': final dynamic lVal}: //, 'dark': final List<String>? dVal}:
+          extFields.writeln('final List<Color>? $keyResultName;');
+          extCopyWithArguments.writeln('List<Color>? $keyResultName,');
+          extLerpReturn.writeln('$keyResultName: $keyResultName,');
+
+          List<String> resultLightColorList = <String>[];
+          if (lVal is List<dynamic>) {
+            resultLightColorList = lVal.map((dynamic element) => replaceColorVal(element?.toString())).toList();
+          }
+
+          final dynamic dValRaw = value['dark'];
+          List<String>? resultDarkColorList;
+          if (dValRaw is List<dynamic>) {
+            resultDarkColorList = dValRaw.map((dynamic element) => replaceColorVal(element?.toString())).toList();
+          }
+
+        // print('------ 3 $keyResultName light = $resultLightColorList resultDarkColorList = $resultDarkColorList');
+
+        default:
+          throw Exception('Unknown color format $keyResultName: $entry');
       }
-
-      /// `2. map {"light": "#f6f4da"} or {"light": "#f6f4da", "dark": "#000011"}. Dark is optional`
-      if (value is Map<String, dynamic>) {
-        final dynamic rawLightValue = value['light'];
-        final dynamic rawDarkValue = value['dark'];
-
-        if (rawLightValue == null) {
-          throw Exception('List light color is null. $keyResultName: $value');
-        }
-
-        extFields.writeln('final Color? $keyResultName;');
-        extCopyWithArguments.writeln('Color? $keyResultName,');
-        extLerpReturn.writeln('$keyResultName: Color.lerp($keyResultName, other.$keyResultName, t),');
-
-        if (rawLightValue is String) {
-          final String lightColorResult = replaceColorVal(rawLightValue);
-        }
-
-        if (rawDarkValue is String) {
-          final String darkColorResult = replaceColorVal(rawDarkValue);
-        }
-
-        break;
-      }
-
-      /// `3. map of array colors {"light": ["#656213", "#000011"], "dark": ["#656213", "#000011"]}. Dark is optional`
-      if (value is Map<String, dynamic>) {
-        final dynamic rawLightValueList = value['light'];
-        final dynamic rawDarkValueList = value['dark'];
-
-        if (rawLightValueList == null) {
-          throw Exception('List light map color is null. $keyResultName: $value');
-        }
-
-        extFields.writeln('final List<Color>? $keyResultName;');
-        extCopyWithArguments.writeln('List<Color>? $keyResultName,');
-        extLerpReturn.writeln('$keyResultName: $keyResultName,');
-
-        if (rawLightValueList is List<dynamic>) {
-          final List<String> resultLightColorList = rawLightValueList.map((dynamic element) {
-            if (element is String) {
-              return replaceColorVal(element);
-            }
-
-            throw Exception('Unknown list format. $keyResultName: $value');
-          }).toList();
-        }
-
-        if (rawDarkValueList is List<dynamic>) {
-          final List<String> resultDarkColorList = rawDarkValueList.map((dynamic element) {
-            if (element is String) {
-              return replaceColorVal(element);
-            }
-
-            throw Exception('Unknown list format. $keyResultName: $value');
-          }).toList();
-        }
-
-        break;
-      }
-
-      throw Exception('Unknown color format $keyResultName: $value');
     }
 
     // replace in template
-    kExtensionTemplate
-      ..replaceAll('#ClassName#', className)
-      ..replaceAll('#Params#', extParams.toString())
-      ..replaceAll('#Fields#', extFields.toString())
-      ..replaceAll('#CopyWithArguments#', extCopyWithArguments.toString())
-      ..replaceAll('#CopyWithReturn#', extCopyWithReturn.toString())
-      ..replaceAll('#LerpReturn#', extLerpReturn.toString());
+    final String resultTemplate = kExtensionTemplate
+        .replaceAll(RegExp('#ClassName#'), className)
+        .replaceAll(RegExp('#Params#'), extParams.toString())
+        .replaceAll(RegExp('#Fields#'), extFields.toString())
+        .replaceAll(RegExp('#CopyWithArguments#'), extCopyWithArguments.toString())
+        .replaceAll(RegExp('#CopyWithReturn#'), extCopyWithReturn.toString())
+        .replaceAll(RegExp('#LerpReturn#'), extLerpReturn.toString());
+
+    sb.writeln(resultTemplate);
 
     return sb.toString();
   }

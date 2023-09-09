@@ -2,16 +2,25 @@
     "primary": "#f6f4da",
     "secondary": "#656213",
     "some_color": "#000011",
+    "test_color_simple": {
+        "light": "#000011"
+    },
     "test_color": {
         "dark": "#656213",
         "light": "#000011"
     },
-    "storyLinearGradientBackground": {
-        "dark": [
+    "simple_map_of_array": {
+        "light": [
+            "#656213",
+            "#000011"
+        ]
+    },
+    "simple_map_of_array_dark": {
+        "light": [
             "#656213",
             "#000011"
         ],
-        "light": [
+        "dark": [
             "#656213",
             "#000011"
         ]
