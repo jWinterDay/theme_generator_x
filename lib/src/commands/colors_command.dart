@@ -1,13 +1,9 @@
-import 'dart:convert';
 import 'dart:io';
 
 import 'package:args/command_runner.dart';
-import 'package:http/http.dart' as http;
+// import 'package:http/http.dart' as http;
 import 'package:path/path.dart' as p;
-import 'package:recase/recase.dart';
 import 'package:theme_generator_x/theme_generator_x.dart';
-
-const JsonDecoder _kDecoder = JsonDecoder();
 
 class ColorsCommand extends Command<void> {
   ColorsCommand() {
@@ -118,7 +114,7 @@ class ColorsCommand extends Command<void> {
     //
     final ColorsUtils colorUtils = ColorsUtils();
 
-    final String result = colorUtils.generateX(outputFile: outputFile, className: className, keysRename: keysRename);
+    final String result = colorUtils.generateX(inputFile: inputFile, className: className, keysRename: keysRename);
 
     outputFile.writeAsStringSync(result);
   }

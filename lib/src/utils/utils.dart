@@ -2,6 +2,8 @@
 
 // import 'package:figma/figma.dart' hide Document;
 
+import 'package:recase/recase.dart';
+
 class Utils {
   static const String _printColorBlack = '\x1B[30m';
   static const String _printColorRed = '\x1B[31m';
@@ -22,4 +24,13 @@ class Utils {
   static void printCyan(String str) => print('$_printColorCyan$str$_printColorReset');
   static void printWhite(String str) => print('$_printColorWhite$str$_printColorReset');
   static void printReset(String str) => print('$_printColorReset$str$_printColorReset');
+
+  static String rename(String text, {required String to}) {
+    return switch (to) {
+      'camel_case' => ReCase(text).camelCase,
+      'original' => text,
+      'snake_case' => ReCase(text).snakeCase,
+      _ => ReCase(text).camelCase,
+    };
+  }
 }

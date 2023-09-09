@@ -1,24 +1,25 @@
 import 'dart:convert';
 import 'dart:io';
-
-import 'package:recase/recase.dart';
+import 'package:theme_generator_x/theme_generator_x.dart';
 
 const JsonDecoder _kDecoder = JsonDecoder();
 
 class ColorsUtils {
-  String generateX({required File outputFile, required String className, required String keysRename}) {
+  String generateX({required File inputFile, required String className, required String keysRename}) {
     final StringBuffer sb = StringBuffer();
 
-    // TODO
     sb.writeln('''
-        // GENERATED CODE - DO NOT MODIFY BY HAND
+      // GENERATED CODE - DO NOT MODIFY BY HAND
+    ''');
 
-        // ignore_for_file: avoid_classes_with_only_static_members
+    final String content = inputFile.readAsStringSync();
 
-        // import 'package:uikit/uikit.dart';
-        // import 'package:flutter/material.dart';
+    final Map<String, dynamic> tokenMap = _kDecoder.convert(content) as Map<String, dynamic>;
 
-        ''');
+    //
+    // Utils.
+
+    sb.writeln(tokenMap.toString());
 
     return sb.toString();
   }
