@@ -1,275 +1,227 @@
 import 'dart:convert';
 import 'dart:io';
-
-import 'package:recase/recase.dart';
+import 'package:theme_generator_x/theme_generator_x.dart';
 
 const JsonDecoder _kDecoder = JsonDecoder();
 
+const String _kExtensionTemplate = '''
+@immutable
+class #ClassName# extends ThemeExtension<#ClassName#> {
+  const #ClassName# ({
+    #Params#
+  });
+
+  #Fields#
+
+  @override
+  #ClassName# copyWith({
+    #CopyWithArguments#
+  }) {
+    return #ClassName#(
+      #CopyWithReturn#
+    );
+  }
+
+  @override
+  #ClassName# lerp(#ClassName#? other, double t) {
+    if (other is! #ClassName#) {
+      return this;
+    }
+
+    return #ClassName#(
+      #LerpReturn#
+    );
+  }
+}
+''';
+
+const String _kExtensionDataTemplate = '''
+#ClassName# #DataMethodName# () {
+  return const #ClassName#(
+    #Values
+  );
+}
+''';
+
 class ColorsUtils {
-  String generateX({required File outputFile, required String className, required String keysRename}) {
+  static const String _darkName = 'dark';
+  static const String _lightName = 'light';
+
+  /// #495aa6 => 0xff495aa6
+  String replaceColorVal(String? color) {
+    if (color == null) {
+      throw Exception('color is null');
+    }
+
+    // #495aa6 len = 7
+    // #ff495aa6 len = 9
+    if (!<int>[7, 9].contains(color.length)) {
+      throw Exception('Color [$color] does not have required format: #495aa6 or #ff495aa6');
+    }
+
+    if (!color.startsWith('#')) {
+      throw Exception('Color [$color] does not start with #');
+      // return '0xffffffff';
+    }
+
+    // #495aa6
+    if (color.length == 7) {
+      final String val = color.replaceAll(RegExp('#'), '0xff');
+      return 'Color($val)';
+    }
+
+    // #ff495aa6
+    final String val = color.replaceAll(RegExp('#'), '0x');
+    return 'Color($val)';
+  }
+
+  /// ```json
+  /// {
+  ///     "primary": "#f6f4da",
+  ///     "secondary": "#656213",
+  ///     "some_color": "#000011",
+  ///     "test_color": {
+  ///         "dark": "#656213",
+  ///         "light": "#000011"
+  ///     },
+  ///     "storyLinearGradientBackground": {
+  ///         "dark": [
+  ///             "#656213",
+  ///             "#000011"
+  ///         ],
+  ///         "light": [
+  ///             "#656213",
+  ///             "#000011"
+  ///         ]
+  ///     }
+  /// }
+  /// ```
+  String generateX({required File inputFile, required String className, required String keysRename}) {
     final StringBuffer sb = StringBuffer();
 
-    // TODO
     sb.writeln('''
-        // GENERATED CODE - DO NOT MODIFY BY HAND
+      // GENERATED CODE - DO NOT MODIFY BY HAND
 
-        // ignore_for_file: avoid_classes_with_only_static_members
+      import 'package:flutter/material.dart';
+    ''');
 
-        // import 'package:uikit/uikit.dart';
-        // import 'package:flutter/material.dart';
+    final String content = inputFile.readAsStringSync();
 
-        ''');
+    final Map<String, dynamic> tokenMap = _kDecoder.convert(content) as Map<String, dynamic>;
+
+    // result class
+    final StringBuffer extParams = StringBuffer();
+    final StringBuffer extFields = StringBuffer();
+    final StringBuffer extCopyWithArguments = StringBuffer();
+    final StringBuffer extCopyWithReturn = StringBuffer();
+    final StringBuffer extLerpReturn = StringBuffer();
+
+    // result data
+    final StringBuffer dataLightValues = StringBuffer();
+    final StringBuffer dataDarkValues = StringBuffer();
+
+    // _kExtensionDataTemplate
+
+    for (final MapEntry<String, dynamic> entry in tokenMap.entries) {
+      final String keyResultName = Utils.rename(entry.key, to: keysRename);
+      final dynamic value = entry.value;
+
+      //
+      extParams.writeln('required this.$keyResultName,');
+      extCopyWithReturn.writeln('$keyResultName: $keyResultName ?? this.$keyResultName,');
+
+      switch (value) {
+        /// `1. simple string "#f6f4da"`
+        case final String lVal:
+          final String lightColorResult = replaceColorVal(lVal);
+          // class
+          extFields.writeln('final Color? $keyResultName;');
+          extCopyWithArguments.writeln('Color? $keyResultName,');
+          extLerpReturn.writeln('$keyResultName: Color.lerp($keyResultName, other.$keyResultName, t),');
+          // data
+          dataLightValues.writeln('$keyResultName: $lightColorResult,');
+          dataDarkValues.writeln('$keyResultName: $lightColorResult,'); //
+
+        /// `2. map {"light": "#f6f4da"} or {"light": "#f6f4da", "dark": "#000011"}`
+        case {_lightName: final String lVal}:
+          final String? dVal = value[_darkName];
+          final String lightColorResult = replaceColorVal(lVal);
+          final String darkColorResult = dVal == null ? lightColorResult : replaceColorVal(dVal);
+
+          // class
+          extFields.writeln('final Color? $keyResultName;');
+          extCopyWithArguments.writeln('Color? $keyResultName,');
+          extLerpReturn.writeln('$keyResultName: Color.lerp($keyResultName, other.$keyResultName, t),');
+          // data
+          dataLightValues.writeln('$keyResultName: $lightColorResult,');
+          dataDarkValues.writeln('$keyResultName: $darkColorResult,'); //
+
+        /// `3. map of array colors {"light": ["#656213", "#000011"], "dark": ["#656213", "#000011"]}. Dark is optional`
+        case {_lightName: final dynamic lVal}:
+          // light
+          List<String> lightList = <String>[];
+          if (lVal is List<dynamic>) {
+            lightList = lVal.map((dynamic element) => replaceColorVal(element?.toString())).toList();
+          }
+          final String resultLigthStr = '''
+            <Color>[
+              ${lightList.join(',')},
+            ]
+          ''';
+
+          // dark
+          final dynamic dValRaw = value[_darkName];
+          List<String>? darkList;
+          if (dValRaw is List<dynamic>) {
+            darkList = dValRaw.map((dynamic element) => replaceColorVal(element?.toString())).toList();
+          }
+          final String resultDarkStr = darkList == null
+              ? resultLigthStr
+              : '''
+                <Color>[
+                  ${darkList.join(',')},
+                ]
+              ''';
+
+          // class
+          extFields.writeln('final List<Color>? $keyResultName;');
+          extCopyWithArguments.writeln('List<Color>? $keyResultName,');
+          extLerpReturn.writeln('$keyResultName: $keyResultName,');
+          // data
+          dataLightValues.writeln('$keyResultName: $resultLigthStr,');
+          dataDarkValues.writeln('$keyResultName: $resultDarkStr,'); //
+
+        default:
+          throw Exception('Unknown color format $keyResultName: $entry');
+      }
+    }
+
+    // replace in template
+    final String resultClassTemplate = _kExtensionTemplate
+        .replaceAll(RegExp('#ClassName#'), className) // AppThemeDataColorsX
+        .replaceAll(RegExp('#Params#'), extParams.toString())
+        .replaceAll(RegExp('#Fields#'), extFields.toString())
+        .replaceAll(RegExp('#CopyWithArguments#'), extCopyWithArguments.toString())
+        .replaceAll(RegExp('#CopyWithReturn#'), extCopyWithReturn.toString())
+        .replaceAll(RegExp('#LerpReturn#'), extLerpReturn.toString());
+
+    final String resultLightDataTemplate = _kExtensionDataTemplate
+        .replaceAll(RegExp('#ClassName#'), className) // AppThemeDataColorsX
+        .replaceAll(RegExp('#DataMethodName#'), '$_lightName${className}Data') // ligthAppThemeDataColorsXData
+        .replaceAll(RegExp('#Values'), dataLightValues.toString());
+
+    final String resultDarkDataTemplate = _kExtensionDataTemplate
+        .replaceAll(RegExp('#ClassName#'), className) // AppThemeDataColorsX
+        .replaceAll(RegExp('#DataMethodName#'), '$_darkName${className}Data') // darkAppThemeDataColorsXData
+        .replaceAll(RegExp('#Values'), dataDarkValues.toString());
+
+    sb
+      ..writeln(resultLightDataTemplate)
+      ..writeln('\n')
+      ..writeln(resultDarkDataTemplate)
+      ..writeln('\n\n')
+      ..writeln(resultClassTemplate);
 
     return sb.toString();
   }
-  // static const String commonColorThemeXClassName = 'AppThemeDataColorsV2X';
-
-  // static const String commonColorClassName = 'AppColorsV2';
-  // static const String commonBaseColorClassName = '_BaseColor';
-
-  // static const String lightColorClassName = '_L';
-  // static const String darkColorClassName = '_D';
-
-  /// ```json
-  ///{
-  ///  "🄲 Brand[S100]": {
-  ///    "21|19.92": {
-  ///      "value": "#050818"
-  ///    },
-  ///    "2|1.13": {
-  ///      "value": "#e9f1ff"
-  ///    }
-  ///  }
-  ///}```
-  ///
-  ///key: "🄲 Brand[S100]"
-  // PayloadResult handleColor(String key, dynamic value, {bool useCustomDark = false}) {
-  //   final StringBuffer sbForMap = StringBuffer();
-
-  //   final Map<String, String> fieldNameMap = <String, String>{};
-
-  //   final Map<String, dynamic> vals = value as Map<String, dynamic>;
-
-  //   // subKey: "21|19.92"
-  //   vals.forEach((String subKey, dynamic subValue) {
-  //     final String fieldName = renameColorKey(key); // 🄲 Brand[S100] => BrandS100
-
-  //     // sub
-  //     final String fieldSubName = renameSubnameFieldKey(subKey);
-  //     final Map<String, dynamic> subValMap = subValue as Map<String, dynamic>;
-
-  //     final String rawColor = subValMap['value'].toString();
-  //     final String subColorVal = replaceColorVal(rawColor);
-  //     //
-  //     final String resultFn = resultFieldName(fieldName: fieldName, fieldSubName: fieldSubName);
-
-  //     fieldNameMap.putIfAbsent(resultFn, () => '$key ($subKey)');
-
-  //     if (useCustomDark) {
-  //       sbForMap.writeln(
-  //         '''
-  //       static final Color $resultFn = invertColor(const Color($subColorVal));
-  //     ''',
-  //       );
-  //     } else {
-  //       sbForMap.writeln(
-  //         '''
-  //       static const Color $resultFn = Color($subColorVal);
-  //     ''',
-  //       );
-  //     }
-  //   });
-
-  //   return PayloadResult(
-  //     fieldNameMap: fieldNameMap,
-  //     content: sbForMap.toString(),
-  //   );
-  // }
-
-  // String resultBaseColorClass(Map<String, String> fieldNameMap) {
-  //   final StringBuffer sb = StringBuffer();
-
-  //   sb.writeln('abstract class ${ColorUtils.commonBaseColorClassName} {');
-
-  //   fieldNameMap.forEach((String fieldName, String rawJsonName) {
-  //     /// $rawJsonName
-  //     sb.write(
-  //       '''
-  //     Color get $fieldName;
-  //     ''',
-  //     );
-  //   });
-
-  //   sb.writeln('}'); // class
-
-  //   return sb.toString();
-  // }
-
-  // @Deprecated('Use resultColorExtensionClass for creating ThemeExtension')
-
-  // ///  🄲 Brand[S100] (0|1.03)
-  // String resultColorClass(Map<String, String> fieldNameMap) {
-  //   final StringBuffer sb = StringBuffer();
-
-  //   sb.writeln(
-  //     '''
-  //   class ${ColorUtils.commonColorClassName} {
-  //     ${ColorUtils.commonColorClassName}(this.br) {
-  //       switch (br) {
-  //         case Brightness.dark:
-  //           _baseColor = _D();
-  //           break;
-
-  //         default:
-  //           _baseColor = _L();
-  //       }
-  //     }
-
-  //     final Brightness br;
-
-  //     late ${ColorUtils.commonBaseColorClassName} _baseColor;
-  // ''',
-  //   );
-
-  //   fieldNameMap.forEach((String fieldName, String rawJsonName) {
-  //     sb.write(
-  //       '''
-  //     /// $rawJsonName
-  //     Color get $fieldName => _baseColor.$fieldName;
-  //     ''',
-  //     );
-  //   });
-
-  //   sb.writeln('}'); // class
-
-  //   return sb.toString();
-  // }
-
-  // String resultColorExtensionClass(Map<String, String> fieldNameMap) {
-  //   final StringBuffer sb = StringBuffer();
-
-  //   // 1 arguments
-  //   final StringBuffer argSb = StringBuffer();
-  //   fieldNameMap.forEach((String fieldName, String _) {
-  //     argSb.write('required this.$fieldName,');
-  //   });
-
-  //   // 2 fields
-  //   final StringBuffer fieldsSb = StringBuffer();
-  //   fieldNameMap.forEach((String fieldName, String _) {
-  //     fieldsSb.write('''
-  //       final Color? $fieldName;
-  //     ''');
-  //   });
-
-  //   // 3 copyWith arguments
-  //   final StringBuffer copyWithArgSb = StringBuffer();
-  //   fieldNameMap.forEach((String fieldName, String _) {
-  //     copyWithArgSb.write('''
-  //       Color? $fieldName,
-  //     ''');
-  //   });
-
-  //   // 3 copyWith arguments
-  //   final StringBuffer copyWithBodySb = StringBuffer();
-  //   fieldNameMap.forEach((String fieldName, String _) {
-  //     copyWithBodySb.write('''
-  //       $fieldName: $fieldName ?? this.$fieldName,
-  //     ''');
-  //   });
-
-  //   // 4 lerp body
-  //   final StringBuffer lerpBodySb = StringBuffer();
-  //   fieldNameMap.forEach((String fieldName, String _) {
-  //     lerpBodySb.write('''
-  //       $fieldName: Color.lerp($fieldName, other.$fieldName, t),
-  //     ''');
-  //   });
-
-  //   sb.writeln(
-  //     '''
-  //     @immutable
-  //     class ${ColorUtils.commonColorThemeXClassName} extends ThemeExtension<${ColorUtils.commonColorThemeXClassName}> {
-  //       const ${ColorUtils.commonColorThemeXClassName}({
-  //         $argSb
-  //       });
-
-  //       $fieldsSb
-
-  //       @override
-  //       ${ColorUtils.commonColorThemeXClassName} copyWith({
-  //         $copyWithArgSb
-  //       }) {
-  //         return ${ColorUtils.commonColorThemeXClassName}(
-  //           $copyWithBodySb
-  //         );
-  //       }
-
-  //       @override
-  //       ${ColorUtils.commonColorThemeXClassName} lerp(${ColorUtils.commonColorThemeXClassName}? other, double t) {
-  //         if (other is! ${ColorUtils.commonColorThemeXClassName}) {
-  //           return this;
-  //         }
-
-  //         return ${ColorUtils.commonColorThemeXClassName}(
-  //           $lerpBodySb
-  //         );
-  //       }
-  //     }
-  //   ''',
-  //   );
-
-  //   return sb.toString();
-  // }
-
-  // String resultColorExtensionDataClass(Map<String, String> fieldNameMap) {
-  //   final StringBuffer sb = StringBuffer();
-
-  //   final StringBuffer bodySb = StringBuffer();
-  //   fieldNameMap.forEach((String fieldName, String _) {
-  //     bodySb.write('''
-  //       $fieldName: isDark ?  ${ColorUtils.darkColorClassName}.$fieldName : ${ColorUtils.lightColorClassName}.$fieldName,
-  //     ''');
-  //   });
-
-  //   sb.writeln('''
-  //     ${ColorUtils.commonColorThemeXClassName} colorV2XData({required bool isDark}) {
-  //       return AppThemeDataColorsV2X(
-  //         $bodySb
-  //       );
-  //     }
-  //   ''');
-
-  //   return sb.toString();
-  // }
-
-  // /// 🄲 Brand[S100] => BrandS100
-  // String renameColorKey(String key) {
-  //   return key.replaceAll(RegExp(r'\[|\]|🄲|\s'), '');
-  // }
-
-  // /// 21|19.92
-  // String renameSubnameFieldKey(String key) {
-  //   return '_$key'.replaceAll(RegExp(r'\|'), '_').replaceAll(RegExp(r'\.'), ''); // 21|19.92
-  // }
-
-  // /// #495aa6 => 0xff495aa6
-  // String replaceColorVal(String subColor) {
-  //   if (!subColor.startsWith('#')) {
-  //     return '0xffffffff'; // TODO(enikiforov): default color
-  //   }
-
-  //   if (subColor.length == 7) {
-  //     return subColor.replaceAll(RegExp('#'), '0xff');
-  //   }
-
-  //   return subColor.replaceAll(RegExp('#'), '0x');
-  // }
-
-  // /// cBrandS100_0_103
-  // String resultFieldName({required String fieldName, required String fieldSubName}) {
-  //   final String fullTxt = '$fieldName$fieldSubName';
-
-  //   return ReCase(fullTxt).camelCase;
-  // }
 }

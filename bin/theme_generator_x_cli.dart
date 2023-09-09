@@ -14,7 +14,7 @@ Future<void> main(List<String> args) async {
     stderr.writeln('$exc');
     exit(64);
   } on Exception catch (exc) {
-    stderr.writeln('Uuexpected error: $exc');
+    stderr.writeln('Unexpected error: $exc');
     exit(1);
   }
 }
