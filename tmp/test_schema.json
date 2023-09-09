@@ -1,7 +1,7 @@
 {
     "primary": "#f6f4da",
-    "secondary": "#656213",
-    "some_color": "#000011",
+    "secondary": "0xff9e9e9e",
+    "some_color": "#ff000011",
     "test_color_simple": {
         "light": "#000011"
     },

@@ -53,10 +53,16 @@ class ColorsUtils {
       throw Exception('color is null');
     }
 
+    // 0xff9e9e9e
     // #495aa6 len = 7
     // #ff495aa6 len = 9
-    if (!<int>[7, 9].contains(color.length)) {
+    if (!<int>[7, 9, 10].contains(color.length)) {
       throw Exception('Color [$color] does not have required format: #495aa6 or #ff495aa6');
+    }
+
+    // 0xff9e9e9e
+    if (color.length == 10 && color.startsWith('0x')) {
+      return 'Color($color)';
     }
 
     if (!color.startsWith('#')) {
