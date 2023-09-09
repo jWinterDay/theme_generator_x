@@ -1,0 +1,52 @@
+{
+  "explorer.fileNesting.enabled": false,
+  "explorer.fileNesting.expand": false,
+  "explorer.fileNesting.patterns": {
+    "pubspec.yaml": ".flutter-plugins, .packages, .dart_tool, .flutter-plugins-dependencies, .metadata, .packages, pubspec.lock, build.yaml, analysis_options.yaml, all_lint_rules.yaml",
+    ".gitignore": ".gitattributes, .gitmodules, .gitmessage, .mailmap, .git-blame*",
+    "readme.*": "authors, backers.md, changelog*, citation*, code_of_conduct.md, codeowners, contributing.md, contributors, copying, credits, governance.md, history.md, license*, maintainers, readme*, security.md, sponsors.md",
+    "*.dart": "$(capture).g.dart, $(capture).freezed.dart",
+  },
+  "emeraldwalk.runonsave": {
+    "commands": [
+      {
+        "match": "\\.dart$",
+        "isAsync": true,
+        "cmd": "bash ${workspaceFolder}/scripts/run_on_save_take_screenshot.sh ${fileBasename}"
+        //  "echo '>> dart ${workspaceFolder} | ${workspaceFolder} | ${file} | ${fileBasename} | ${fileDirname}'"
+      },
+    ]
+  },
+  "dart.lineLength": 120,
+  "[dart]": {
+    "editor.formatOnSave": true,
+    "editor.detectIndentation": false,
+    "editor.tabSize": 2,
+  },
+  "[html]": {
+    "editor.formatOnSave": true,
+    "editor.detectIndentation": false,
+    "editor.tabSize": 2,
+  },
+  "[json]": {
+    "editor.formatOnSave": true,
+    "editor.detectIndentation": false,
+    "editor.tabSize": 4,
+  },
+  "[swift]": {
+    "editor.formatOnSave": true,
+    "editor.detectIndentation": false,
+    "editor.tabSize": 2,
+  },
+  "[go]": {
+    "editor.insertSpaces": false,
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": {
+      "source.organizeImports": true
+    }
+  },
+  "files.associations": {
+    "*.arb": "json"
+  },
+  "dart.runPubGetOnPubspecChanges": "never"
+}
