@@ -189,8 +189,15 @@ class ColorsUtils {
       throw Exception('Unknown color format $keyResultName: $value');
     }
 
+    // replace in template
+    kExtensionTemplate
+      ..replaceAll('#ClassName#', className)
+      ..replaceAll('#Params#', extParams.toString())
+      ..replaceAll('#Fields#', extFields.toString())
+      ..replaceAll('#CopyWithArguments#', extCopyWithArguments.toString())
+      ..replaceAll('#CopyWithReturn#', extCopyWithReturn.toString())
+      ..replaceAll('#LerpReturn#', extLerpReturn.toString());
+
     return sb.toString();
   }
-
-  // String
 }
