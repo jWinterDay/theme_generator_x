@@ -1,6 +1,7 @@
 name: theme_generator_x
 description: A new Flutter package project.
 version: 0.0.1
+repository: https://github.com/jWinterDay/theme_generator_x
 
 environment:
   sdk: ">=3.1.0 <4.0.0"
@@ -16,5 +17,6 @@ dependencies:
 
 dev_dependencies:
   flutter_lints: ^2.0.2
+  melos: ^3.1.1
 
 flutter:
