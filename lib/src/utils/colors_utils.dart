@@ -4,7 +4,7 @@ import 'package:theme_generator_x/theme_generator_x.dart';
 
 const JsonDecoder _kDecoder = JsonDecoder();
 
-const String kExtensionTemplate = '''
+const String _kExtensionTemplate = '''
 @immutable
 class #ClassName# extends ThemeExtension<#ClassName#> {
   const #ClassName# ({
@@ -32,6 +32,14 @@ class #ClassName# extends ThemeExtension<#ClassName#> {
       #LerpReturn#
     );
   }
+}
+''';
+
+const String _kExtensionDataTemplate = '''
+#ClassName# #DataMethodName# () {
+  return const #ClassName#(
+    #Values
+  );
 }
 ''';
 
@@ -98,13 +106,18 @@ class ColorsUtils {
 
     final Map<String, dynamic> tokenMap = _kDecoder.convert(content) as Map<String, dynamic>;
 
-    // result strings
+    // result class
     final StringBuffer extParams = StringBuffer();
     final StringBuffer extFields = StringBuffer();
     final StringBuffer extCopyWithArguments = StringBuffer();
     final StringBuffer extCopyWithReturn = StringBuffer();
     final StringBuffer extLerpReturn = StringBuffer();
-    //
+
+    // result data
+    final StringBuffer dataLightValues = StringBuffer();
+    final StringBuffer dataDarkValues = StringBuffer();
+
+    // _kExtensionDataTemplate
 
     for (final MapEntry<String, dynamic> entry in tokenMap.entries) {
       final String keyResultName = Utils.rename(entry.key, to: keysRename);
@@ -118,42 +131,62 @@ class ColorsUtils {
         /// `1. simple string "#f6f4da"`
         case final String lVal:
           final String lightColorResult = replaceColorVal(lVal);
-          // print('------ 1 $keyResultName lightColorResult = $lightColorResult');
-
+          // class
           extFields.writeln('final Color? $keyResultName;');
           extCopyWithArguments.writeln('Color? $keyResultName,');
           extLerpReturn.writeln('$keyResultName: Color.lerp($keyResultName, other.$keyResultName, t),');
+          // data
+          dataLightValues.writeln('$keyResultName: $lightColorResult,');
+          dataDarkValues.writeln('$keyResultName: $lightColorResult,'); //
 
         /// `2. map {"light": "#f6f4da"} or {"light": "#f6f4da", "dark": "#000011"}`
         case {'light': final String lVal}:
+          final String? dVal = value['dark'];
+          final String lightColorResult = replaceColorVal(lVal);
+          final String darkColorResult = dVal == null ? lightColorResult : replaceColorVal(dVal);
+
+          // class
           extFields.writeln('final Color? $keyResultName;');
           extCopyWithArguments.writeln('Color? $keyResultName,');
           extLerpReturn.writeln('$keyResultName: Color.lerp($keyResultName, other.$keyResultName, t),');
-
-          final String? dVal = value['dark'];
-          final String lightColorResult = replaceColorVal(lVal);
-          final String? darkColorResult = dVal == null ? null : replaceColorVal(dVal);
-
-        // print('------ 2 $keyResultName lightColorResult = $lightColorResult darkColorResult = $darkColorResult');
+          // data
+          dataLightValues.writeln('$keyResultName: $lightColorResult,');
+          dataDarkValues.writeln('$keyResultName: $darkColorResult,'); //
 
         /// `3. map of array colors {"light": ["#656213", "#000011"], "dark": ["#656213", "#000011"]}. Dark is optional`
-        case {'light': final dynamic lVal}: //, 'dark': final List<String>? dVal}:
+        case {'light': final dynamic lVal}:
+          // light
+          List<String> lightList = <String>[];
+          if (lVal is List<dynamic>) {
+            lightList = lVal.map((dynamic element) => replaceColorVal(element?.toString())).toList();
+          }
+          final String resultLigthStr = '''
+            <Color>[
+              ${lightList.join(',')}
+            ]
+          ''';
+
+          // dark
+          final dynamic dValRaw = value['dark'];
+          List<String>? darkList;
+          if (dValRaw is List<dynamic>) {
+            darkList = dValRaw.map((dynamic element) => replaceColorVal(element?.toString())).toList();
+          }
+          final String resultDarkStr = darkList == null
+              ? resultLigthStr
+              : '''
+                <Color>[
+                  ${darkList.join(',')}
+                ]
+              ''';
+
+          // class
           extFields.writeln('final List<Color>? $keyResultName;');
           extCopyWithArguments.writeln('List<Color>? $keyResultName,');
           extLerpReturn.writeln('$keyResultName: $keyResultName,');
-
-          List<String> resultLightColorList = <String>[];
-          if (lVal is List<dynamic>) {
-            resultLightColorList = lVal.map((dynamic element) => replaceColorVal(element?.toString())).toList();
-          }
-
-          final dynamic dValRaw = value['dark'];
-          List<String>? resultDarkColorList;
-          if (dValRaw is List<dynamic>) {
-            resultDarkColorList = dValRaw.map((dynamic element) => replaceColorVal(element?.toString())).toList();
-          }
-
-        // print('------ 3 $keyResultName light = $resultLightColorList resultDarkColorList = $resultDarkColorList');
+          // data
+          dataLightValues.writeln('$keyResultName: $resultLigthStr,');
+          dataDarkValues.writeln('$keyResultName: $resultDarkStr,'); //
 
         default:
           throw Exception('Unknown color format $keyResultName: $entry');
@@ -161,15 +194,30 @@ class ColorsUtils {
     }
 
     // replace in template
-    final String resultTemplate = kExtensionTemplate
-        .replaceAll(RegExp('#ClassName#'), className)
+    final String resultClassTemplate = _kExtensionTemplate
+        .replaceAll(RegExp('#ClassName#'), className) // AppThemeDataColorsX
         .replaceAll(RegExp('#Params#'), extParams.toString())
         .replaceAll(RegExp('#Fields#'), extFields.toString())
         .replaceAll(RegExp('#CopyWithArguments#'), extCopyWithArguments.toString())
         .replaceAll(RegExp('#CopyWithReturn#'), extCopyWithReturn.toString())
         .replaceAll(RegExp('#LerpReturn#'), extLerpReturn.toString());
 
-    sb.writeln(resultTemplate);
+    final String resultLightDataTemplate = _kExtensionDataTemplate
+        .replaceAll(RegExp('#ClassName#'), className) // AppThemeDataColorsX
+        .replaceAll(RegExp('#DataMethodName#'), 'light${className}Data') // ligthAppThemeDataColorsXData
+        .replaceAll(RegExp('#Values'), dataLightValues.toString());
+
+    final String resultDarkDataTemplate = _kExtensionDataTemplate
+        .replaceAll(RegExp('#ClassName#'), className) // AppThemeDataColorsX
+        .replaceAll(RegExp('#DataMethodName#'), 'dark${className}Data') // darkAppThemeDataColorsXData
+        .replaceAll(RegExp('#Values'), dataDarkValues.toString());
+
+    sb
+      ..writeln(resultLightDataTemplate)
+      ..writeln('\n')
+      ..writeln(resultDarkDataTemplate)
+      ..writeln('\n\n')
+      ..writeln(resultClassTemplate);
 
     return sb.toString();
   }
