@@ -73,7 +73,7 @@ also you can generate array of colors
 ## CMD
 
 ```bash
-theme_generator_x colors --input tmp/test_schema.json --output tmp/output.dart --class_name AppThemeDataColorsX
+theme_generator_x colors --input example/test_schema.json --output example/output.dart --class_name AppThemeDataColorsX
 ```
 
 of course you can use absolute or relative paths to the files
