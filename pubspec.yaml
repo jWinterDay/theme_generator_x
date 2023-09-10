@@ -1,6 +1,6 @@
 name: theme_generator_x
 description: Theme extension generator
-version: 0.0.2
+version: 0.0.3
 repository: https://github.com/jWinterDay/theme_generator_x
 
 environment:

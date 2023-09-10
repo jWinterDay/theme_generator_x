@@ -11,7 +11,7 @@ class ColorsCommand extends Command<void> {
       ..addOption(
         'input',
         abbr: 'p',
-        help: 'colors path',
+        help: 'colors JSON path',
       )
       ..addOption(
         'output',
