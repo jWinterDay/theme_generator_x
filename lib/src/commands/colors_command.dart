@@ -122,7 +122,7 @@ class ColorsCommand extends Command<void> {
     final ColorsUtils colorUtils = ColorsUtils();
 
     final String result = colorUtils.generateX(
-      inputFile: inputFile,
+      content: inputFile.readAsStringSync(),
       className: className,
       useDark: useDark,
       keysRename: keysRename,

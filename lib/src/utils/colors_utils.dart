@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:io';
 import 'package:theme_generator_x/theme_generator_x.dart';
 
 const JsonDecoder _kDecoder = JsonDecoder();
@@ -103,7 +102,7 @@ class ColorsUtils {
   /// }
   /// ```
   String generateX({
-    required File inputFile,
+    required String content,
     required String className,
     required bool useDark,
     required String keysRename,
@@ -115,8 +114,6 @@ class ColorsUtils {
 
       import 'package:flutter/material.dart';
     ''');
-
-    final String content = inputFile.readAsStringSync();
 
     final Map<String, dynamic> tokenMap = _kDecoder.convert(content) as Map<String, dynamic>;
 
