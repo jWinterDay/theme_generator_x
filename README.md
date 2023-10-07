@@ -36,6 +36,18 @@ you can use different JSON key-value structures
 }
 ```
 
+array of colors
+* `0 item` - light color
+* `1 item` - dark color
+```json
+{
+    "composite": [
+        "#f6f4da",
+        "0xff9e9e9e"
+    ]
+}
+```
+
 ```json
 {
     "test_color_simple": {

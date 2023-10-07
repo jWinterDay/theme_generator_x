@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:io';
 import 'package:theme_generator_x/theme_generator_x.dart';
 
 const JsonDecoder _kDecoder = JsonDecoder();
@@ -103,7 +102,7 @@ class ColorsUtils {
   /// }
   /// ```
   String generateX({
-    required File inputFile,
+    required String content,
     required String className,
     required bool useDark,
     required String keysRename,
@@ -115,8 +114,6 @@ class ColorsUtils {
 
       import 'package:flutter/material.dart';
     ''');
-
-    final String content = inputFile.readAsStringSync();
 
     final Map<String, dynamic> tokenMap = _kDecoder.convert(content) as Map<String, dynamic>;
 
@@ -209,6 +206,28 @@ class ColorsUtils {
           dataLightValues.writeln('$keyResultName: $resultLigthStr,');
           if (useDark) {
             dataDarkValues.writeln('$keyResultName: $resultDarkStr,'); //
+          }
+
+        /// `4. list of strings ["#f6f4da", "0xff9e9e9e"]`
+        case final List<dynamic> lVal: // final String lVal:
+
+          final String lightColorResult = replaceColorVal(lVal[0].toString());
+
+          // class
+          extFields.writeln('final Color? $keyResultName;');
+          extCopyWithArguments.writeln('Color? $keyResultName,');
+          extLerpReturn.writeln('$keyResultName: Color.lerp($keyResultName, other.$keyResultName, t),');
+
+          // data
+          dataLightValues.writeln('$keyResultName: $lightColorResult,');
+          if (useDark) {
+            if (lVal.length != 2) {
+              throw Exception('Unknown list of colors format $keyResultName: $entry');
+            }
+
+            final String darkColorResult = replaceColorVal(lVal[1]);
+
+            dataDarkValues.writeln('$keyResultName: $darkColorResult,');
           }
 
         default:

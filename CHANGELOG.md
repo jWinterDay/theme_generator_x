@@ -1,3 +1,5 @@
+## 0.0.6
+* light and dark color as list
 ## 0.0.5
 * example
 ## 0.0.4
