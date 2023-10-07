@@ -17,6 +17,26 @@ AppThemeDataColorsX lightAppThemeDataColorsXData() {
       Color(0xff995577),
       Color(0xff000011),
     ],
+    composite: Color(0xfff6f4da),
+  );
+}
+
+AppThemeDataColorsX darkAppThemeDataColorsXData() {
+  return const AppThemeDataColorsX(
+    primary: Color(0xfff6f4da),
+    secondary: Color(0xff9e9e9e),
+    someColor: Color(0xff000011),
+    testColorSimple: Color(0xff000011),
+    testColor: Color(0xff656213),
+    simpleMapOfArray: <Color>[
+      Color(0xff656213),
+      Color(0xff000011),
+    ],
+    simpleMapOfArrayDark: <Color>[
+      Color(0xff110022),
+      Color(0xff000000),
+    ],
+    composite: Color(0xff9e9e9e),
   );
 }
 
@@ -30,6 +50,7 @@ class AppThemeDataColorsX extends ThemeExtension<AppThemeDataColorsX> {
     required this.testColor,
     required this.simpleMapOfArray,
     required this.simpleMapOfArrayDark,
+    required this.composite,
   });
 
   final Color? primary;
@@ -39,6 +60,7 @@ class AppThemeDataColorsX extends ThemeExtension<AppThemeDataColorsX> {
   final Color? testColor;
   final List<Color>? simpleMapOfArray;
   final List<Color>? simpleMapOfArrayDark;
+  final Color? composite;
 
   @override
   AppThemeDataColorsX copyWith({
@@ -49,6 +71,7 @@ class AppThemeDataColorsX extends ThemeExtension<AppThemeDataColorsX> {
     Color? testColor,
     List<Color>? simpleMapOfArray,
     List<Color>? simpleMapOfArrayDark,
+    Color? composite,
   }) {
     return AppThemeDataColorsX(
       primary: primary ?? this.primary,
@@ -58,6 +81,7 @@ class AppThemeDataColorsX extends ThemeExtension<AppThemeDataColorsX> {
       testColor: testColor ?? this.testColor,
       simpleMapOfArray: simpleMapOfArray ?? this.simpleMapOfArray,
       simpleMapOfArrayDark: simpleMapOfArrayDark ?? this.simpleMapOfArrayDark,
+      composite: composite ?? this.composite,
     );
   }
 
@@ -75,6 +99,7 @@ class AppThemeDataColorsX extends ThemeExtension<AppThemeDataColorsX> {
       testColor: Color.lerp(testColor, other.testColor, t),
       simpleMapOfArray: simpleMapOfArray,
       simpleMapOfArrayDark: simpleMapOfArrayDark,
+      composite: Color.lerp(composite, other.composite, t),
     );
   }
 }
